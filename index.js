@@ -1,61 +1,92 @@
-const products = [];
+const fs = require('fs');
+const { runInThisContext } = require('vm');
 
-class ProductManager {
-
-    static id = 1;
-    constructor ( title, description, price, thumbnail, code, stock ) {
-        this.title = title;
-        this.description = description;
-        this.price = price;
-        this. thumbnail = thumbnail;
-        this.code = code;
-        this.stock = stock;
-        ProductManager.id;
+class ProductManager{
+    constructor(path){
+        this.path = path;
+        this.products = this.readFile();
     }
-    addProduct() {
-        const product = ({
-            title: this.title,
-            description: this.description,
-            price: this.price,
-            thumbnail: this.thumbnail,
-            code: this.code,
-            stock: this.stock,
-            id: ProductManager.id
-        })
-    
-        const check = products.find(e => e.code === product.code)
 
-        if(check == true){
-            console.log("error");
-        }else {
-            products.push(product);
-            ProductManager.id++;
+    readFile(){
+        const data = JSON.parse(fs.readFileSync(`./${this.path}`), "utf-8")
+        return data;
+    }
+
+    writeData(data){
+        let dataString = JSON.stringify(data)
+        fs.writeFileSync (`./${this.path}`, dataString)
+        return dataString
+    }
+
+    idGenerator(){
+        if(this.products.length > 0){
+            let id = this.products.map(product => product.id)
+            return Math.max(...id)+1;
+        }else{
+            let id = 1
+            return id
         }
+    }
 
-        if (!product.title || !product.description || !product.price || !product.thumbnail || !product.code || !product.stock) {
+    getAllProducts(){
+        let data = this.readFile();
+        console.log(data);
+        return data;
+    }
+
+    addProduct(product){
+        if(this.products.find(item => item.code === product.code)){
+            return console.log("Ya existe un producto con ese codigo")
+        }else if (!!!product.title || !!!product.description || !!!product.price || !!!product.thumbnail || !!!product.code || !!!product.stock) {
             console.log("Complete todos los campos");
+        }else{
+            let data = this.readFile();
+            product.id = this.idGenerator();
+            data.push(product);
+            this.writeData(data);
         }
+    }
+
+    getProductById(id){
+
+        let data = this.readFile();
+        let productToGet = data.find(product => product.id === id)
+        if(productToGet){    
+            console.log(productToGet)
+            return productToGet
+        }
+            console.log("No se encontro un producto con esa id");    
+    }
+
+    UpdateProduct(id, product){
+        let data = this.readFile();
+        if(data.find(product => product.id === id)){
+            let productDeleted = data.filter(product => product.id !== id)
+            product.id = id
+            productDeleted.push(product);
+            this.writeData(productDeleted)
+            return productDeleted
+        }
+            console.log("No se encontro la ID del producto a actualizar")     
+    }
+
+    deletedProduct(id){
+        let data = this.readFile();
+        if(data.find(product => product.id === id)){
+            let products = data.filter(product => product.id !== id)
+            this.writeData(products)
+            console.log(products)
+            return products;
+        }
+            console.log("No se encontro la ID del producto a actualizar")       
     }
 }
 
-    const getProducts = () => { //Retornar todos los productos
-        console.log(products)
-    }
+const productManager = new ProductManager("products.json");
 
-    const getProductsById = (id) => { //retornar todos los productos que cuente este id
-        const busqueda = products.find(product => product.id === id)
+const product1 ={title:"Siempre Listo",description:"Pasapañuelos",price: "$500",code:145546,thumbnail:"imgRout",stock: 10};
 
-        if (busqueda == undefined){
-            console.log("not found")
-        }else {
-            console.log(busqueda)
-        }
-    }
-
-    const product1 = new ProductManager("Siempre Listo", "Pasapañuelos", "$500", "imgRout", 1456, 10);
-    const product2 = new ProductManager("Manada", "Pasapañuelos", "$700", "imgRout", 1856, 5);
-
-    product1.addProduct();
-    product2.addProduct();
-
-    getProducts();
+productManager.addProduct(product1)
+productManager.getProductById(2)
+productManager.deletedProduct(1)
+productManager.UpdateProduct(2, {title:"Darzee",description:"Pasapañuelos",price: "$800",code:1412356,thumbnail:"imgRout",stock: 10});
